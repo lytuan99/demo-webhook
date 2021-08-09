@@ -18,6 +18,20 @@ const url = "http://localhost:2222/api/webhook";
 // copy secret_key from app
 const SECRET_KEY = "695c6541-bf7b-411a-949e-b3321774d39a";
 
+const verifySignature = (req, res, next) => {
+  // get signature
+  const [algorithm, signature] = req.headers["x-smd-signature"].split("=");
+
+  // hash body
+  const hash = createHmac("sha256", SECRET_KEY)
+    .update(`${req.rawBody}${req.body.timestamp}`)
+    .digest("hex");
+
+  // compare
+  if (hash === signature) return next();
+  throw new Error("not verify");
+};
+
 // api verify webhook
 app.get("/api/webhook", (req, res) => {
   const {mode, verifyToken, expectation} = req.query;
@@ -40,20 +54,6 @@ app.post("/api/webhook", verifySignature, (req, res) => {
   console.log("post webhook: ", data);
   return res.send({status: 1});
 });
-
-const verifySignature = (req, res, next) => {
-  // get signature
-  const [algorithm, signature] = req.headers["x-smd-signature"].split("=");
-
-  // hash body
-  const hash = createHmac("sha256", SECRET_KEY)
-    .update(`${req.rawBody}${req.body.timestamp}`)
-    .digest("hex");
-
-  // compare
-  if (hash === signature) return next();
-  throw new Error("not verify");
-};
 
 // Server demo
 
