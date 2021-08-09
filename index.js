@@ -27,6 +27,8 @@ const verifySignature = (req, res, next) => {
     .update(`${req.rawBody}${req.body.timestamp}`)
     .digest("hex");
 
+  // you can check timestamp here
+
   // compare
   if (hash === signature) return next();
   throw new Error("not verify");
@@ -35,11 +37,16 @@ const verifySignature = (req, res, next) => {
 // api verify webhook
 app.get("/api/webhook", (req, res) => {
   const {mode, verifyToken, expectation} = req.query;
+
+  // get hashed secret key to  verify webhook
   const hashedSecretKey = createHash("sha1").update(SECRET_KEY).digest("hex");
-  // verify webhook request
+
+  // Checks if a verifyToken and mode is in the query string of the request
   if (mode && verifyToken) {
+    // Check mode and verifyToken is correct
     if (mode === "subscribe" && verifyToken === hashedSecretKey) {
       console.log("WEBHOOK IS VERIFIED");
+      // Responds with the expectation token from the request
       return res.status(200).send(expectation);
     }
     return res.sendStatus(403);
@@ -47,7 +54,7 @@ app.get("/api/webhook", (req, res) => {
   return res.sendStatus(400);
 });
 
-// api receive webhook event
+// create the endpoint for our webhook
 app.post("/api/webhook", verifySignature, (req, res) => {
   const data = req.body;
 
@@ -59,6 +66,6 @@ app.post("/api/webhook", verifySignature, (req, res) => {
 
 const server = http.createServer(app);
 
-server.listen(2222, () => {
-  console.log("connected to server in port 2222");
+server.listen(process.env.PORT || 2222, () => {
+  console.log("webhook is listening");
 });
