@@ -24,7 +24,7 @@ const verifySignature = (req, res, next) => {
 
   // hash body
   const hash = createHmac("sha256", SECRET_KEY)
-    .update(`${req.rawBody}${req.body.timestamp}`)
+    .update(req.rawBody) // JSON.stringify(req.body)
     .digest("hex");
 
   // you can check timestamp here
@@ -34,7 +34,7 @@ const verifySignature = (req, res, next) => {
   throw new Error("not verify");
 };
 
-// api verify webhook
+// this endpoint is verification support
 app.get("/api/webhook", (req, res) => {
   const {mode, verifyToken, expectation} = req.query;
 
@@ -58,12 +58,12 @@ app.get("/api/webhook", (req, res) => {
 app.post("/api/webhook", verifySignature, (req, res) => {
   const data = req.body;
 
+  // Do your work
   console.log("post webhook: ", data);
   return res.send({status: 1});
 });
 
 // Server demo
-
 const server = http.createServer(app);
 
 server.listen(process.env.PORT || 2222, () => {
